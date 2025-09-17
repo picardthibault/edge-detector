@@ -1,0 +1,40 @@
+@startuml UMLClassDiagram
+class Image {
+    -char* inputFilePath
+    -std::uint32_t width
+    -std::uint32_t height
+    -std::vector<unsigned char*> rows
+    --
+    +Image(inputFile: const char*, width: const std::uint32_t, height: const std::uint32_t, rows: std::vector<unsigned char*>)
+    +\~Image()
+    --
+    -void toGrayScale()
+}
+
+class ImageIO {
+    {static} +load(inputFile: const char*): Image
+    {static} +save(image: Image, outputFile: const char*): void
+    {static} -bool isPng(fpIn: FILE*)
+}
+
+interface Processor {
+    + process(image: Image): void
+}
+
+class GrayScaleProcessor {
+    + process(image: Image): void
+}
+
+class ThresholdProcessor {
+    + process(image: Image): void
+}
+
+class EdgeDetectorProcessor {
+    + process(image: Image): void
+}
+
+Processor <|-- ThresholdProcessor
+Processor <|-- EdgeDetectorProcessor
+Processor <|-- GrayScaleProcessor
+ImageIO <-- Image
+@enduml
