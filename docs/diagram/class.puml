@@ -1,20 +1,22 @@
 @startuml UMLClassDiagram
 class Image {
-    -char* inputFilePath
+    -std::string inputFilePath
     -std::uint32_t width
     -std::uint32_t height
-    -std::vector<unsigned char*> rows
+    -std::vector<unsigned char> data
     --
-    +Image(inputFile: const char*, width: const std::uint32_t, height: const std::uint32_t, rows: std::vector<unsigned char*>)
-    +\~Image()
+    +Image(inputFile: const std::string, width: const std::uint32_t, height: const std::uint32_t, rows: const std::vector<unsigned char>&)
     --
-    -void toGrayScale()
+    +getWidth(): std::uint32_t 
+    +getHeight(): std::uint32_t
+    +getData(): std::vector<unsigned char>&
 }
 
 class ImageIO {
+    {static} -loadPNG(inputFile: const char*): Image
+    --
     {static} +load(inputFile: const char*): Image
     {static} +save(image: Image, outputFile: const char*): void
-    {static} -bool isPng(fpIn: FILE*)
 }
 
 interface Processor {
