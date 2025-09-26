@@ -1,4 +1,3 @@
-#include <png.h>
 #include <iostream>
 
 #include "Image.hpp"
@@ -10,10 +9,8 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        Image image = Image(argv[1]);
-        image.load();
-        image.convertToGrayScale();
-        image.saveImage(argv[2]);
+        Image image = ImageIO::load(argv[1]);
+        ImageIO::save(image, argv[2]);
     } catch(const std::exception& e) {
         std::cerr << "Error : " << e.what() << '\n';
         return 1;
