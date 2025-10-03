@@ -5,8 +5,10 @@
 Image::Image(const std::string inputFilePath,
         const std::uint32_t width,
         const std::uint32_t height,
+        const int channel,
+        const int bitsPerChannel,
         const std::vector<unsigned char>& data
-    ): inputFilePath(inputFilePath), width(width), height(height), data(data) {}
+    ): inputFilePath(inputFilePath), width(width), height(height), channel(channel), bitsPerChannel(bitsPerChannel), data(data) {}
 
 std::uint32_t Image::getWidth() const {
     return this->width;
@@ -14,6 +16,14 @@ std::uint32_t Image::getWidth() const {
 
 std::uint32_t Image::getHeight() const {
     return this->height;
+}
+
+int Image::getChannel() const {
+    return this->channel;
+}
+
+int Image::getBitsPerChannel() const {
+    return this->bitsPerChannel;
 }
 
 const std::vector<unsigned char>& Image::getData() const {
@@ -71,27 +81,36 @@ Image ImageIO::loadPNG(const char* inputFilePath) {
 
     std::uint32_t width  = png_get_image_width(pngIn, infoIn);
     std::uint32_t height = png_get_image_height(pngIn, infoIn);
-    png_byte color_type = png_get_color_type(pngIn, infoIn);
-    png_byte bit_depth  = png_get_bit_depth(pngIn, infoIn);
+    png_byte colorType = png_get_color_type(pngIn, infoIn);
+    png_byte bitDepth  = png_get_bit_depth(pngIn, infoIn);
 
-    // Normaliser l'image (RGBA 8 bits par canal)
-    if (bit_depth == 16)
+    // format image to 8bits per channel RGBA image
+    if (bitDepth == 16) {
         png_set_strip_16(pngIn);
-    if (color_type == PNG_COLOR_TYPE_PALETTE)
+    }
+    if (colorType == PNG_COLOR_TYPE_PALETTE) {
         png_set_palette_to_rgb(pngIn);
-    if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+    }
+    if (colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8) {
         png_set_expand_gray_1_2_4_to_8(pngIn);
-    if (png_get_valid(pngIn, infoIn, PNG_INFO_tRNS))
+    }
+    if (png_get_valid(pngIn, infoIn, PNG_INFO_tRNS)) {
         png_set_tRNS_to_alpha(pngIn);
-    if (color_type == PNG_COLOR_TYPE_RGB ||
-        color_type == PNG_COLOR_TYPE_GRAY ||
-        color_type == PNG_COLOR_TYPE_PALETTE)
+    }
+    if (colorType == PNG_COLOR_TYPE_RGB ||
+        colorType == PNG_COLOR_TYPE_GRAY ||
+        colorType == PNG_COLOR_TYPE_PALETTE) {
         png_set_filler(pngIn, 0xFF, PNG_FILLER_AFTER);
-    if (color_type == PNG_COLOR_TYPE_GRAY ||
-        color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+    }
+    if (colorType == PNG_COLOR_TYPE_GRAY ||
+        colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
         png_set_gray_to_rgb(pngIn);
+    }
 
     png_read_update_info(pngIn, infoIn);
+
+    int channel = 4; // because RGBA normalization
+    int bitsPerChannel = 8; // because 8bit per channel normalization
 
     size_t rowBytes = png_get_rowbytes(pngIn, infoIn);
     std::vector<unsigned char> pixels(height * rowBytes);
@@ -107,7 +126,7 @@ Image ImageIO::loadPNG(const char* inputFilePath) {
     png_destroy_read_struct(&pngIn, nullptr, nullptr);
     fclose(fpIn);
 
-    return Image(inputFilePath, width, height, pixels);
+    return Image(inputFilePath, width, height, channel, bitsPerChannel, pixels);
 }
 
 void ImageIO::save(Image image, const char* outputFilePath) {
@@ -141,7 +160,7 @@ void ImageIO::save(Image image, const char* outputFilePath) {
         infoOut,
         image.getWidth(),
         image.getHeight(),
-        8,
+        image.getBitsPerChannel(),
         PNG_COLOR_TYPE_RGBA,
         PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT,
@@ -149,13 +168,13 @@ void ImageIO::save(Image image, const char* outputFilePath) {
     png_write_info(pngOut, infoOut);
 
     const std::vector<unsigned char>& dataRef = image.getData();
-    std::vector<png_bytep> row_pointers(image.getHeight());
-    size_t rowbytes = image.getWidth() * 4;
+    std::vector<png_bytep> rowPointers(image.getHeight());
+    size_t rowbytes = image.getWidth() * image.getChannel() * (image.getBitsPerChannel() / 8);
     for (size_t y = 0; y < image.getHeight(); y++) {
-        row_pointers[y] = (png_bytep)(dataRef.data() + y * rowbytes);
+        rowPointers[y] = (png_bytep)(dataRef.data() + y * rowbytes);
     }
 
-    png_write_image(pngOut, row_pointers.data());
+    png_write_image(pngOut, rowPointers.data());
     png_write_end(pngOut, nullptr);
 
     fclose(fpOut);
