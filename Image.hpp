@@ -5,37 +5,40 @@
 #include <cstdint>
 #include <vector>
 
-class Image {
+class PixelConfiguration {
+    public:
+        enum Channel { RGBA, GRAY };
+        PixelConfiguration(const Channel type, const int bitsPerChannel);
+        const int getChannelPerPixel() const;
+        const int getBytesPerPixel() const;
+        const int getBitsPerChannel() const;
 
     private:
-    const std::string inputFilePath;
-    const std::uint32_t width;
-    const std::uint32_t height;
-    const int channel;
-    const int bitsPerChannel;
-    const std::vector<unsigned char> data;
-
-    public:
-    Image(const std::string inputFilePath,
-        const std::uint32_t width,
-        const std::uint32_t height,
-        const int channel,
-        const int bitsPerChannel,
-        const std::vector<unsigned char>& data);
-    std::uint32_t getWidth() const;
-    std::uint32_t getHeight() const;
-    int getChannel() const;
-    int getBitsPerChannel() const;
-    const std::vector<unsigned char>& getData() const;
+        Channel channel;
+        int bitsPerChannel;
 };
 
-class ImageIO {
-    private:
-    static Image loadPNG(const char* inputFilePath);
-
+class Image {
     public:
-    static Image load(const char* inputFilePath);
-    static void save(Image image, const char* outputFile);
+        Image(const std::string inputFilePath,
+            const std::uint32_t width,
+            const std::uint32_t height,
+            PixelConfiguration pixelConfiguration,
+            std::vector<unsigned char>& data);
+
+        const std::uint32_t getWidth() const;
+        const std::uint32_t getHeight() const;
+        const PixelConfiguration getPixelConfiguration() const;
+        int getBytesPerRow() const;
+        std::vector<unsigned char *> getRowPointers();
+        std::vector<unsigned char>& getData();
+
+    private:
+        const std::string inputFilePath;
+        const std::uint32_t width;
+        const std::uint32_t height;
+        PixelConfiguration pixelConfiguration;
+        std::vector<unsigned char> data;
 };
 
 #endif
