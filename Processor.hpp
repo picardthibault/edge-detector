@@ -5,19 +5,20 @@
 
 class Processor {
     public: 
-        virtual void process(Image& image) = 0;
+        virtual Image process() = 0;
         virtual ~Processor() {}
 };
 
 class GrayScaleProcessor: public Processor {
 
     private:
-        void processRow(unsigned char *start, const Image& image);
+        Image& image;
+        unsigned char processPixel(unsigned char *pixelPointeur);
 
     public:
-        GrayScaleProcessor();
+        GrayScaleProcessor(Image& image);
         ~GrayScaleProcessor() override;
-        void process(Image& image) override;
+        Image process() override;
 };
 
 #endif

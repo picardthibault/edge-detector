@@ -12,8 +12,8 @@ int main(int argc, char* argv[]) {
     try {
         Image image = ImageIO::load(argv[1]);
         
-        GrayScaleProcessor grayScaleProcessor = GrayScaleProcessor();
-        grayScaleProcessor.process(image);
+        GrayScaleProcessor grayScaleProcessor = GrayScaleProcessor(image);
+        grayScaleProcessor.process();
         
         ImageIO::save(image, argv[2]);
     } catch(const std::exception& e) {

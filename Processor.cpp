@@ -1,38 +1,43 @@
 #include <iostream>
 #include <algorithm>
+#include <functional>
 #include "Processor.hpp"
 
-GrayScaleProcessor::GrayScaleProcessor(): Processor() {}
+GrayScaleProcessor::GrayScaleProcessor(Image& image): Processor(), image(image) {
+    if (image.getPixelConfiguration().getColorType().getType() != ColorType::RGBA) {
+        throw std::invalid_argument("Invalid image, only RGBA image can be processed");
+    }
+}
 
 GrayScaleProcessor::~GrayScaleProcessor() {}
 
-void GrayScaleProcessor::process(Image& image) {
-    std::cout << "Process image to gray scale" << std::endl;
+Image GrayScaleProcessor::process() {
+    std::cout << "Processing image to gray scale" << std::endl;
 
-    std::vector<unsigned char *> rowPointers = image.getRowPointers();
-    for (int y = 0; y < image.getHeight(); y++) {
-        processRow(rowPointers[y], image);
-    }
+    PixelConfiguration newImagePixelConfiguration = PixelConfiguration(ColorType::GRAY, 8);
+    int numberOfPixels = image.getHeight() * image.getWidth();
+
+    std::vector<unsigned char> newImagePixels(numberOfPixels * newImagePixelConfiguration.getBytesPerPixel());
+
+    std::vector<unsigned char *> originalImagePixelPointers = image.getPixelPointers();
+    
+    std::transform(originalImagePixelPointers.cbegin(),
+        originalImagePixelPointers.cend(),
+        newImagePixels.begin(),
+        [this](unsigned char *pixel) { return this->processPixel(pixel); }
+    );
 
     std::cout << "Successfully processed image to gray scale" << std::endl;
+
+    image.setPixelConfiguration(newImagePixelConfiguration);
+    image.setData(newImagePixels);
+
+    return image;
 }
 
-void GrayScaleProcessor::processRow(unsigned char *start, const Image& image) {
-    int channel = image.getPixelConfiguration().getChannelPerPixel();
-    int bytePerChannel = image.getPixelConfiguration().getBitsPerChannel() / 8;
-
-    int i = 0;
-    while (i < image.getBytesPerRow()) {
-        unsigned char r = *(start + i);
-        unsigned char g = *(start + i + 1);
-        unsigned char b = *(start + i + 2);
-        unsigned char a = *(start + i + 3);
-
-        unsigned char grayScaleValue = (r + g + b) / 3;
-
-        for (int y = 0; y < channel; y++) {
-            *(start + i + y) = grayScaleValue;
-        }
-        i = i + channel * bytePerChannel;
-    }
+unsigned char GrayScaleProcessor::processPixel(unsigned char *pixelPointer) {
+    unsigned char r = *(pixelPointer);
+    unsigned char g = *(pixelPointer + 1);
+    unsigned char b = *(pixelPointer + 2);
+    return (r + g + b) / 3;
 } 

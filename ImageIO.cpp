@@ -14,7 +14,7 @@ Image ImageIO::loadPNG(const char* inputFilePath) {
     FILE* fpIn = fopen(inputFilePath, "rb");
 
     if (!fpIn) {
-        throw std::invalid_argument(std::string("Unable to open file \"") + inputFilePath + "\".");
+        throw std::invalid_argument("Unable to open file \"" + std::string(inputFilePath) + "\".");
     }
     
     png_byte header[8];
@@ -23,7 +23,7 @@ Image ImageIO::loadPNG(const char* inputFilePath) {
 
     if (!isValidPng) {
         fclose(fpIn);
-        throw std::invalid_argument(std::string("File \"") + inputFilePath + "\" is not a valid PNG image.");
+        throw std::invalid_argument("File \"" + std::string(inputFilePath) + "\" is not a valid PNG image.");
     }
 
     png_structp pngIn = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -83,7 +83,7 @@ Image ImageIO::loadPNG(const char* inputFilePath) {
     png_read_update_info(pngIn, infoIn);
 
     PixelConfiguration pixelConfiguration = PixelConfiguration(
-        PixelConfiguration::Channel::RGBA, // because RGBA normalization
+        ColorType::Type::RGBA, // because RGBA normalization
         8 // because 8bit per channel normalization
     );
 
@@ -101,7 +101,18 @@ Image ImageIO::loadPNG(const char* inputFilePath) {
     png_destroy_read_struct(&pngIn, nullptr, nullptr);
     fclose(fpIn);
 
-    return Image(inputFilePath, width, height, pixelConfiguration, pixels);
+    return Image(width, height, pixelConfiguration, pixels);
+}
+
+int ImageIO::mapPixelConfigurationToPNGColorType(const PixelConfiguration pixelConfiguration) {
+    switch(pixelConfiguration.getColorType().getType()) {
+        case ColorType::RGBA :
+            return PNG_COLOR_TYPE_RGBA;
+        case ColorType::GRAY :
+            return PNG_COLOR_TYPE_GRAY;
+        default:
+            throw std::invalid_argument("Unknown color type");
+    }
 }
 
 void ImageIO::save(Image image, const char* outputFilePath) {
@@ -136,7 +147,7 @@ void ImageIO::save(Image image, const char* outputFilePath) {
         image.getWidth(),
         image.getHeight(),
         image.getPixelConfiguration().getBitsPerChannel(),
-        PNG_COLOR_TYPE_RGBA,
+        mapPixelConfigurationToPNGColorType(image.getPixelConfiguration()),
         PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT,
         PNG_FILTER_TYPE_DEFAULT);

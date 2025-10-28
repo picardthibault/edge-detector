@@ -6,6 +6,7 @@
 class ImageIO {
     private:
     static Image loadPNG(const char* inputFilePath);
+    static int mapPixelConfigurationToPNGColorType(const PixelConfiguration pixelConfiguration);
 
     public:
     static Image load(const char* inputFilePath);
