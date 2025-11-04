@@ -14,6 +14,9 @@ int main(int argc, char* argv[]) {
         
         GrayScaleProcessor grayScaleProcessor = GrayScaleProcessor(image);
         grayScaleProcessor.process();
+
+        GlobalThresholdingImageProcessor globalThresholdingImageProcessor = GlobalThresholdingImageProcessor(image);
+        globalThresholdingImageProcessor.process();
         
         ImageIO::save(image, argv[2]);
     } catch(const std::exception& e) {

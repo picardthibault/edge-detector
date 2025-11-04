@@ -40,4 +40,40 @@ unsigned char GrayScaleProcessor::processPixel(unsigned char *pixelPointer) {
     unsigned char g = *(pixelPointer + 1);
     unsigned char b = *(pixelPointer + 2);
     return (r + g + b) / 3;
-} 
+}
+
+GlobalThresholdingImageProcessor::GlobalThresholdingImageProcessor(Image& image): Processor(), image(image) {
+    if (image.getPixelConfiguration().getColorType().getType() != ColorType::GRAY) {
+        throw std::invalid_argument("Invalid image, only GRAY image can be processed");
+    }
+}
+
+GlobalThresholdingImageProcessor::~GlobalThresholdingImageProcessor() {}
+
+Image GlobalThresholdingImageProcessor::process() {
+    std::cout << "Processing global thresholding algorithm on image" << std::endl;
+
+    std::vector<unsigned char *> imagePixelPointers = image.getPixelPointers();
+    
+    std::transform(imagePixelPointers.cbegin(),
+        imagePixelPointers.cend(),
+        imagePixelPointers.begin(),
+        [this](unsigned char *pixel) { return this->processPixel(pixel); }
+    );
+
+    std::cout << "Successfully processed global thresholding algorithm on image" << std::endl;
+
+    return image;
+}
+
+unsigned char* GlobalThresholdingImageProcessor::processPixel(unsigned char *pixelPointeur) {
+    unsigned char pixelValue = *pixelPointeur;
+    
+    if (pixelValue > 125) {
+        *pixelPointeur = 255;
+    } else {
+        *pixelPointeur = 0;
+    }
+
+    return pixelPointeur;
+}
