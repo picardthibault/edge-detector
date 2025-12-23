@@ -1,6 +1,7 @@
 #include <iostream>
 
-#include "Image.hpp"
+#include "ImageIO.hpp"
+#include "Processor.hpp"
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -10,6 +11,10 @@ int main(int argc, char* argv[]) {
 
     try {
         Image image = ImageIO::load(argv[1]);
+        
+        GrayScaleProcessor grayScaleProcessor = GrayScaleProcessor(image);
+        grayScaleProcessor.process();
+        
         ImageIO::save(image, argv[2]);
     } catch(const std::exception& e) {
         std::cerr << "Error : " << e.what() << '\n';

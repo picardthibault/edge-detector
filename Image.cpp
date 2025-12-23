@@ -1,163 +1,86 @@
-#include "Image.hpp"
-#include <png.h>
 #include <iostream>
 
-Image::Image(const std::string inputFilePath,
-        const std::uint32_t width,
+#include "Image.hpp"
+
+ColorType::ColorType(ColorType::Type type): type(type) {}
+
+const ColorType::Type ColorType::getType() const {
+    return type;
+}
+
+const int ColorType::getNumberOfChannel() const {
+    switch (type) {
+        case RGBA :
+            return 4;
+        case GRAY :
+            return 1;
+        default:
+            throw std::invalid_argument("Unknown color type");
+    }
+}
+
+PixelConfiguration::PixelConfiguration(const ColorType colorType, const int bitsPerChannel): colorType(colorType), bitsPerChannel(bitsPerChannel) {}
+
+const ColorType PixelConfiguration::getColorType() const {
+    return colorType;
+}
+
+const int PixelConfiguration::getBytesPerPixel() const {
+    return colorType.getNumberOfChannel() * bitsPerChannel / 8;
+}
+
+const int PixelConfiguration::getBitsPerChannel() const {
+    return bitsPerChannel;
+}
+
+Image::Image(const std::uint32_t width,
         const std::uint32_t height,
-        const std::vector<unsigned char>& data
-    ): inputFilePath(inputFilePath), width(width), height(height), data(data) {}
+        PixelConfiguration pixelConfiguration,
+        std::vector<unsigned char>& data
+    ): width(width), height(height), pixelConfiguration(pixelConfiguration), data(data) {}
 
-std::uint32_t Image::getWidth() const {
-    return this->width;
+const std::uint32_t Image::getWidth() const {
+    return width;
 }
 
-std::uint32_t Image::getHeight() const {
-    return this->height;
+const std::uint32_t Image::getHeight() const {
+    return height;
 }
 
-const std::vector<unsigned char>& Image::getData() const {
-    return this->data;
+const PixelConfiguration Image::getPixelConfiguration() const {
+    return pixelConfiguration;
 }
 
-Image ImageIO::load(const char* inputFilePath) {
-    std::cout << "Load image from \"" << inputFilePath << "\"" << std::endl;
-    return ImageIO::loadPNG(inputFilePath);
+void Image::setPixelConfiguration(PixelConfiguration pixelConfiguration) {
+    this->pixelConfiguration = pixelConfiguration;
 }
 
-Image ImageIO::loadPNG(const char* inputFilePath) {
-    std::cout << "Load image from \"" << inputFilePath << "\" as PNG image" << std::endl;
+int Image::getBytesPerRow() const {
+    return getWidth() * pixelConfiguration.getBytesPerPixel();
+}
 
-    FILE* fpIn = fopen(inputFilePath, "rb");
+std::vector<unsigned char *> Image::getRowPointers() {
+    int bytesPerRow = this->getBytesPerRow();
 
-    if (!fpIn) {
-        throw std::invalid_argument(std::string("Unable to open file \"") + inputFilePath + "\".");
-    }
-    
-    png_byte header[8];
-    fread(header, 1, 8, fpIn);
-    bool isValidPng = png_sig_cmp(header, 0, 8) == 0;
-
-    if (!isValidPng) {
-        fclose(fpIn);
-        throw std::invalid_argument(std::string("File \"") + inputFilePath + "\" is not a valid PNG image.");
-    }
-
-    png_structp pngIn = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-    if (!pngIn) {
-        png_destroy_read_struct(&pngIn, nullptr, nullptr);
-        fclose(fpIn);
-        throw std::runtime_error("Unable to create PNG image read structure");
-    }
-
-    png_infop infoIn = png_create_info_struct(pngIn);
-    if (!infoIn) {
-        png_destroy_info_struct(pngIn, &infoIn);
-        png_destroy_read_struct(&pngIn, nullptr, nullptr);
-        fclose(fpIn);
-        throw std::runtime_error("Unable to create info structure");
-    }
-
-    if (setjmp(png_jmpbuf(pngIn))) {
-        png_destroy_info_struct(pngIn, &infoIn);
-        png_destroy_read_struct(&pngIn, nullptr, nullptr);
-        fclose(fpIn);
-        throw std::ios_base::failure("Fail to load PNG image.");
-    }
-
-    png_init_io(pngIn, fpIn);
-    png_set_sig_bytes(pngIn, 8);
-    png_read_info(pngIn, infoIn);
-
-    std::uint32_t width  = png_get_image_width(pngIn, infoIn);
-    std::uint32_t height = png_get_image_height(pngIn, infoIn);
-    png_byte color_type = png_get_color_type(pngIn, infoIn);
-    png_byte bit_depth  = png_get_bit_depth(pngIn, infoIn);
-
-    // Normaliser l'image (RGBA 8 bits par canal)
-    if (bit_depth == 16)
-        png_set_strip_16(pngIn);
-    if (color_type == PNG_COLOR_TYPE_PALETTE)
-        png_set_palette_to_rgb(pngIn);
-    if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-        png_set_expand_gray_1_2_4_to_8(pngIn);
-    if (png_get_valid(pngIn, infoIn, PNG_INFO_tRNS))
-        png_set_tRNS_to_alpha(pngIn);
-    if (color_type == PNG_COLOR_TYPE_RGB ||
-        color_type == PNG_COLOR_TYPE_GRAY ||
-        color_type == PNG_COLOR_TYPE_PALETTE)
-        png_set_filler(pngIn, 0xFF, PNG_FILLER_AFTER);
-    if (color_type == PNG_COLOR_TYPE_GRAY ||
-        color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-        png_set_gray_to_rgb(pngIn);
-
-    png_read_update_info(pngIn, infoIn);
-
-    size_t rowBytes = png_get_rowbytes(pngIn, infoIn);
-    std::vector<unsigned char> pixels(height * rowBytes);
-
-    std::vector<png_bytep> rowPointers(height);
+    std::vector<unsigned char *> rowPointers(height);
     for (int y = 0; y < height; y++) {
-        rowPointers[y] = pixels.data() + y * rowBytes;
+        rowPointers[y] = data.data() + y * bytesPerRow;
     }
 
-    png_read_image(pngIn, rowPointers.data());
-
-    png_destroy_info_struct(pngIn, &infoIn);
-    png_destroy_read_struct(&pngIn, nullptr, nullptr);
-    fclose(fpIn);
-
-    return Image(inputFilePath, width, height, pixels);
+    return rowPointers;
 }
 
-void ImageIO::save(Image image, const char* outputFilePath) {
-    std::cout << "Save PNG image to \"" << outputFilePath << "\"" << std::endl;
+std::vector<unsigned char *> Image::getPixelPointers() {
+    int numberOfPixels = height * width;
+    std::vector<unsigned char *> pixelPointers(numberOfPixels);
 
-    FILE* fpOut = fopen(outputFilePath, "wb");
-    if (!fpOut) {
-        throw std::invalid_argument(std::string("Unable to create output file \"") + outputFilePath + "\".");
+    for (int i = 0; i < numberOfPixels; i++) {
+        pixelPointers[i] = data.data() + i * pixelConfiguration.getBytesPerPixel();
     }
 
-    png_structp pngOut = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-    if (!pngOut) {
-        fclose(fpOut);
-        throw std::runtime_error("Unable to create write structure");
-    }
-    png_infop infoOut = png_create_info_struct(pngOut);
-    if (!infoOut) {
-        fclose(fpOut);
-        png_destroy_write_struct(&pngOut, &infoOut);
-        throw std::runtime_error("Unable to create write structure");
-    }
+    return pixelPointers;
+}
 
-    if (setjmp(png_jmpbuf(pngOut))) {
-        fclose(fpOut);
-        png_destroy_write_struct(&pngOut, &infoOut);
-        throw std::invalid_argument("Unable to write in output file");
-    }
-
-    png_init_io(pngOut, fpOut);
-    png_set_IHDR(pngOut,
-        infoOut,
-        image.getWidth(),
-        image.getHeight(),
-        8,
-        PNG_COLOR_TYPE_RGBA,
-        PNG_INTERLACE_NONE,
-        PNG_COMPRESSION_TYPE_DEFAULT,
-        PNG_FILTER_TYPE_DEFAULT);
-    png_write_info(pngOut, infoOut);
-
-    const std::vector<unsigned char>& dataRef = image.getData();
-    std::vector<png_bytep> row_pointers(image.getHeight());
-    size_t rowbytes = image.getWidth() * 4;
-    for (size_t y = 0; y < image.getHeight(); y++) {
-        row_pointers[y] = (png_bytep)(dataRef.data() + y * rowbytes);
-    }
-
-    png_write_image(pngOut, row_pointers.data());
-    png_write_end(pngOut, nullptr);
-
-    fclose(fpOut);
-    png_destroy_write_struct(&pngOut, &infoOut);
+void Image::setData(std::vector<unsigned char>& data) {
+    this->data = data;
 }

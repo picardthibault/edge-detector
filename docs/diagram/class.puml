@@ -3,12 +3,16 @@ class Image {
     -std::string inputFilePath
     -std::uint32_t width
     -std::uint32_t height
+    -int channel
+    -int bitsPerChannel
     -std::vector<unsigned char> data
     --
-    +Image(inputFile: const std::string, width: const std::uint32_t, height: const std::uint32_t, rows: const std::vector<unsigned char>&)
+    +Image(inputFile: const std::string, width: const std::uint32_t, height: const std::uint32_t, channel: const int, bitsPerChannel: const int, rows: const std::vector<unsigned char>&)
     --
     +getWidth(): std::uint32_t 
     +getHeight(): std::uint32_t
+    +getChannel(): int
+    +getBitsPerChannel(): int
     +getData(): std::vector<unsigned char>&
 }
 
