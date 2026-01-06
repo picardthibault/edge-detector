@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
         GrayScaleProcessor grayScaleProcessor = GrayScaleProcessor(image);
         grayScaleProcessor.process();
 
-        GlobalThresholdingImageProcessor globalThresholdingImageProcessor = GlobalThresholdingImageProcessor(image);
-        globalThresholdingImageProcessor.process();
+        LocalThresholdingImageProcessor globalThresholdingImageProcessor = LocalThresholdingImageProcessor(image, 27, 128, 0.1);
+        Image updatedImage = globalThresholdingImageProcessor.process();
         
-        ImageIO::save(image, argv[2]);
+        ImageIO::save(updatedImage, argv[2]);
     } catch(const std::exception& e) {
         std::cerr << "Error : " << e.what() << '\n';
         return 1;

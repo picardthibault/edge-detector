@@ -15,19 +15,32 @@ class GrayScaleProcessor: public Processor {
         unsigned char processPixel(unsigned char *pixelPointeur);
 
     public:
-        GrayScaleProcessor(Image& image);
+        explicit GrayScaleProcessor(Image& image);
         ~GrayScaleProcessor() override;
         Image process() override;
 };
 
-class GlobalThresholdingImageProcessor: public Processor {
+class GlobalThresholdingProcessor: public Processor {
     private:
         Image& image;
         unsigned char* processPixel(unsigned char *pixelPointeur);
 
     public:
-        GlobalThresholdingImageProcessor(Image& image);
-        ~GlobalThresholdingImageProcessor() override;
+        explicit GlobalThresholdingProcessor(Image& image);
+        ~GlobalThresholdingProcessor() override;
+        Image process() override;
+};
+
+class LocalThresholdingImageProcessor: public Processor {
+    private:
+        Image& image;
+        const int window;
+        const int R;
+        const float k;
+
+    public:
+        explicit LocalThresholdingImageProcessor(Image& image, int window, int R, float k);
+        ~LocalThresholdingImageProcessor() override;
         Image process() override;
 };
 

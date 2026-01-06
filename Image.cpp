@@ -81,6 +81,20 @@ std::vector<unsigned char *> Image::getPixelPointers() {
     return pixelPointers;
 }
 
+std::vector<std::vector<unsigned char *>> Image::getDataPointers() {
+    std::vector<std::vector<unsigned char *>> rowPointers(height);
+
+    for (int i = 0; i < height; i++) {
+        std::vector<unsigned char *> pixelPointers(width);
+        for (int j = 0; j < width; j++) {
+            pixelPointers[j] = data.data() + i * pixelConfiguration.getBytesPerPixel() * width + j * pixelConfiguration.getBytesPerPixel();
+        }
+        rowPointers[i] = pixelPointers;
+    }
+
+    return rowPointers;
+}
+
 void Image::setData(std::vector<unsigned char>& data) {
     this->data = data;
 }
