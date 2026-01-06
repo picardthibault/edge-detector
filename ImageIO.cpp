@@ -83,7 +83,7 @@ Image ImageIO::loadPNG(const char* inputFilePath) {
     png_read_update_info(pngIn, infoIn);
 
     PixelConfiguration pixelConfiguration = PixelConfiguration(
-        ColorType::Type::RGBA, // because RGBA normalization
+        ColorType(ColorType::Type::RGBA), // because RGBA normalization
         8 // because 8bit per channel normalization
     );
 

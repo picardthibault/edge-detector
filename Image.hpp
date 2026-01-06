@@ -9,7 +9,9 @@ class ColorType {
     public: 
         enum Type { RGBA, GRAY };
 
-        ColorType(Type type);
+        explicit ColorType(Type type);
+        ColorType(const ColorType&) = default;
+        ColorType& operator=(const ColorType&) = default;
 
         const Type getType() const;
         const int getNumberOfChannel() const;
@@ -20,7 +22,10 @@ class ColorType {
 
 class PixelConfiguration {
     public:
-        PixelConfiguration(const ColorType colorType, const int bitsPerChannel);
+        explicit PixelConfiguration(ColorType colorType, int bitsPerChannel);
+        PixelConfiguration(const PixelConfiguration&) = default;
+        PixelConfiguration& operator=(const PixelConfiguration&) = default;
+
         const ColorType getColorType() const;
         const int getBytesPerPixel() const;
         const int getBitsPerChannel() const;
@@ -32,10 +37,12 @@ class PixelConfiguration {
 
 class Image {
     public:
-        Image(const std::uint32_t width,
+        explicit Image(const std::uint32_t width,
             const std::uint32_t height,
             PixelConfiguration pixelConfiguration,
             std::vector<unsigned char>& data);
+        Image(const Image&) = default;
+        Image& operator=(const Image&) = default;
 
         const std::uint32_t getWidth() const;
         const std::uint32_t getHeight() const;
@@ -44,6 +51,7 @@ class Image {
         int getBytesPerRow() const;
         std::vector<unsigned char *> getRowPointers();
         std::vector<unsigned char *> getPixelPointers();
+        std::vector<std::vector<unsigned char *>> getDataPointers();
         void setData(std::vector<unsigned char>& data);
 
     private:
